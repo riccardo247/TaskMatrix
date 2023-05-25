@@ -1458,6 +1458,38 @@ class BackgroundRemoving:
 
         return mask
 
+class ClassifyColors:
+    def __init__(self, device):
+        print(f"Initializing Classifying_colors to {device}")
+        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+        
+        self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
+            "runwayml/stable-diffusion-v1-5", controlnet=self.controlnet, safety_checker=None,
+            torch_dtype=self.torch_dtype
+        )
+        self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
+        self.pipe.to(device)
+        self.seed = -1
+        
+
+    @prompts(name="Classify colors between two images",
+             description="useful when you want to classify colors given two images and "
+                         "give the two code colors afetr classification "
+                         "The input to this tool should be a comma separated string of two, "
+                         "representing the image1_path and image2_path")
+    def inference(self, inputs):
+        image1_path, image1_path = inputs.split(",")[0], ','.join(inputs.split(',')[1:])
+        image1 = Image.open(image1_path)
+        image2 = Image.open(image1_path)
+        self.seed = random.randint(0, 65535)
+        seed_everything(self.seed)
+        prompt = f'{instruct_text}, {self.a_prompt}'
+        text = self.pipe(image1, image2).text[0]
+        
+        
+        print(f"\nProcessed Classifying_colors, Image 1: {image1_path}, Image 2: {image2_path}, "
+              f"Output text: {text}")
+        return text
 
 class ConversationBot:
     def __init__(self, load_dict):
