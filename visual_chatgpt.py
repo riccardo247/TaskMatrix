@@ -1464,9 +1464,9 @@ class ClassifyColors:
     def __init__(self, device):
         print(f"Initializing Classifying_colors to {device}")
         self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
-        url_path = "https://drive.google.com/uc?export=download&id=1-EIWKrO7kiuNuf4Ku2oXqSHfR3-hbJcH"
+        #url_path = "https://drive.google.com/uc?export=download&id=1-EIWKrO7kiuNuf4Ku2oXqSHfR3-hbJcH"
         #load directly from drive??
-        self.pipe = cc.ColorClassifier(checkpoint_path=url_path)
+        self.pipe = cc.ColorClassifier()
         #self.pipe.to(device)
         self.seed = -1
         

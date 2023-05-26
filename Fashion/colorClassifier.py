@@ -482,7 +482,7 @@ class MAML(nn.Module):
 
 
 class ColorClassifier:
-    def __init__(self, checkpoint_path="checkpoint200.pt"):
+    def __init__(self, load_checkpoint=False, checkpoint_path="state200.pt"):
         num_way = 3
         num_inner_steps = 1
         inner_lr = 0.4
@@ -500,7 +500,8 @@ class ColorClassifier:
         parameters_map = {'meta_parameters': '_meta_parameters',
                           'inner_lrs': '_inner_lrs',
                           }
-        self.load_checkpoint_file()
+        if load_checkpoint:
+            self.load_checkpoint_file()
         self.maml.load_specific_mapped(checkpoint_path, parameters_map)
         #task_batch = get_data(mode='inference')
         self.parameters = {
