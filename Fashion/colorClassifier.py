@@ -33,7 +33,7 @@ rng = np.random.default_rng()
 mode = 'train'
 
 
-def get_data(task_idx=task_idx, inp=DATA_RED, mode='train'):
+def get_data(task_idx, inp, mode='train'):
     if (mode == 'train'):
         task_samples = rng.choice(84, 16)
         task_slice = task_idx[task_samples]
