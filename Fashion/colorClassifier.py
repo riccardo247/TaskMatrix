@@ -500,8 +500,9 @@ class ColorClassifier:
         parameters_map = {'meta_parameters': '_meta_parameters',
                           'inner_lrs': '_inner_lrs',
                           }
-        if load_checkpoint:
-            self.load_checkpoint_file()
+        #if load_checkpoint:
+        #    self.load_checkpoint_file()
+        print(f"loading from {checkpoint_path}")
         self.maml.load_specific_mapped(checkpoint_path, parameters_map)
         #task_batch = get_data(mode='inference')
         self.parameters = {
