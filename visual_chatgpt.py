@@ -43,6 +43,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import wget
 
+from Fashion import colorClassifier as cc
+
 VISUAL_CHATGPT_PREFIX = """Visual ChatGPT is designed to be able to assist with a wide range of text and visual related tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. Visual ChatGPT is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
 
 Visual ChatGPT is able to process and understand large amounts of text and images. As a language model, Visual ChatGPT can not directly read images, but it has a list of tools to finish different visual tasks. Each image will have a file name formed as "image/xxx.png", and Visual ChatGPT can invoke different tools to indirectly understand pictures. When talking about images, Visual ChatGPT is very strict to the file name and will never fabricate nonexistent files. When using tools to generate new image files, Visual ChatGPT is also known that the image may not be the same as the user's demand, and will use other visual question answering tools or description tools to observe the real image. Visual ChatGPT is able to use tools in a sequence, and is loyal to the tool observation outputs rather than faking the image content and image file name. It will remember to provide the file name from the last tool observation, if a new image is generated.
@@ -1463,40 +1465,32 @@ class ClassifyColors:
         print(f"Initializing Classifying_colors to {device}")
         self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
         
-        self.pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            "runwayml/stable-diffusion-v1-5", controlnet=self.controlnet, safety_checker=None,
-            torch_dtype=self.torch_dtype
-        )
-        self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
-        self.pipe.to(device)
+        self.pipe = cc.ColorClassifier()
+        #self.pipe.to(device)
         self.seed = -1
         
 
-    @prompts(name="Classify colors between two images",
-             description="useful when you want to classify colors given two images and "
-                         "give the two code colors afetr classification "
-                         "The input to this tool should be a comma separated string of two, "
-                         "representing the image1_path and image2_path")
+    @prompts(name="Classify colors of a given image",
+             description="useful when you want to classify color of a given image and "
+                         "give the class colors after classification "
+                         "The input to this tool should be a string,"
+                         "representing the image_path")
     def inference(self, inputs):
-        image1_path, image1_path = inputs.split(",")[0], ','.join(inputs.split(',')[1:])
+        image1_path = inputs#.split(",")[0], ','.join(inputs.split(',')[1:])
         image1 = Image.open(image1_path)
-        image2 = Image.open(image1_path)
-        self.seed = random.randint(0, 65535)
-        seed_everything(self.seed)
-        prompt = f'{instruct_text}, {self.a_prompt}'
-        text = self.pipe(image1, image2).text[0]
+        text_out = self.pipe.colors_classify(image1)#.text[0]
         
         
-        print(f"\nProcessed Classifying_colors, Image 1: {image1_path}, Image 2: {image2_path}, "
-              f"Output text: {text}")
-        return text
+        print(f"\nProcessed Classifying_colors, Image : {image1_path}"
+              f"Output text: {text_out}")
+        return text_out
 
 class ConversationBot:
     def __init__(self, load_dict):
         # load_dict = {'VisualQuestionAnswering':'cuda:0', 'ImageCaptioning':'cuda:1',...}
         print(f"Initializing VisualChatGPT, load_dict={load_dict}")
-        if 'ImageCaptioning' not in load_dict:
-            raise ValueError("You have to load ImageCaptioning as a basic function for VisualChatGPT")
+        #if 'ImageCaptioning' not in load_dict:
+        #    raise ValueError("You have to load ImageCaptioning as a basic function for VisualChatGPT")
 
         self.models = {}
         # Load Basic Foundation Models
