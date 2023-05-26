@@ -1477,9 +1477,10 @@ class ClassifyColors:
                          "The input to this tool should be a string,"
                          "representing the image_path")
     def inference(self, inputs):
+        print(f"{inputs}")
         image1_path = inputs#.split(",")[0], ','.join(inputs.split(',')[1:])
-        image1 = Image.open(image1_path)
-        text_out = self.pipe.colors_classify(image1)#.text[0]
+        #image1 = Image.open(image1_path)
+        text_out = self.pipe.colors_classify(image1_path)#.text[0]
         
         
         print(f"\nProcessed Classifying_colors, Image : {image1_path}"

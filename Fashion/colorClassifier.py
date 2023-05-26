@@ -562,11 +562,15 @@ class ColorClassifier:
     def colors_classify(self, file_path):
         # array_img = []
         # for m in images:
+        print(f'going to classify image {file_path}')
         image = self.load_image(file_path)
+        print("loaded image")
         image = image.unsqueeze(0)
         # array_img.append(image)
         # array_img = torch.stack(array_img)
         image = image.to(DEVICE)
+        print(f"starting inference")
         result = self.maml._forward(image, self.parameters)
+        print(f"returned logits")
         result = class_idx = torch.argmax(F.softmax(result))
         return f"the color class is {int(result.item())}"
