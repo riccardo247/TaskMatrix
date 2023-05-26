@@ -540,7 +540,7 @@ class ColorClassifier:
         return tensors
 
     def load_checkpoint_file(self):
-        file_url = "https://drive.google.com/file/d/1-EIWKrO7kiuNuf4Ku2oXqSHfR3-hbJcH/view?usp=share_link"
+        file_url = "https://drive.google.com/uc?export=download&id=1-EIWKrO7kiuNuf4Ku2oXqSHfR3-hbJcH"
         save_path = "checkpoint200.pt"  # Replace with the desired file name
 
         response = requests.get(file_url)
