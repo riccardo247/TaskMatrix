@@ -510,7 +510,7 @@ class ColorClassifier:
             for k, v in self.maml._meta_parameters.items()
         }
         self.maml.to(DEVICE)
-        self.parameters.to(DEVICE)
+
     def load_image(self, file_path):
         # Open the image file with PIL
         image = Image.open(file_path)
