@@ -44,6 +44,7 @@ import matplotlib.pyplot as plt
 import wget
 
 from Fashion import colorClassifier as cc
+from Fashion import hairSegmentation as hair_seg
 
 VISUAL_CHATGPT_PREFIX = """Visual ChatGPT is designed to be able to assist with a wide range of text and visual related tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. Visual ChatGPT is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
 
@@ -1486,6 +1487,37 @@ class ClassifyColors:
         print(f"\nProcessed Classifying_colors, Image : {image1_path}"
               f"Output text: {text_out}")
         return text_out
+    
+class HairSegmentation:
+    def __init__(self, device):
+        print(f"Initializing Hair segmentation to {device}")
+        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+        self.pipe = hair_seg.HairSegmentation()
+        #self.pipe.to(device)
+        self.seed = -1
+        
+
+    @prompts(name="Hair segmentation of one given image",
+             description="useful when you want to do hair segmentation a given image , "
+                         "returns the segmented image later "
+                         "The input to this tool should be a string,"
+                         "representing the image_path")
+    def inference(self, inputs):
+        print(f"{inputs}")
+        image1_path = inputs#.split(",")[0], ','.join(inputs.split(',')[1:])
+        #image1 = Image.open(image1_path)
+        mask_out = self.pipe.hair_segment(image1_path)#.text[0]
+        
+        image = Image.open(image1_path)
+        mask = Image.fromarray(mask_out)
+        image.putalpha(mask)
+
+        updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
+        image.save(updated_image_path)
+
+        print(f"\nProcessed hair segmentation, Image : {image1_path}"
+              f"Output image: {updated_image_path}")
+        return updated_image_path
 
 class ConversationBot:
     def __init__(self, load_dict):
