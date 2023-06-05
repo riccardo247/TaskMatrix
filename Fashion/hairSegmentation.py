@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torchvision.transforms import ToTensor
 from torchvision.transforms import ToPILImage
 from PIL import Image
@@ -10,18 +11,6 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class HairSegmentation:
     def __init__(self, load_checkpoint=False, checkpoint_path="hair_segmentation_20epochs.pt"):
-        num_way = 3
-        num_inner_steps = 1
-        inner_lr = 0.4
-        outer_lr = 0.001
-        learn_inner_lrs = True
-
-
-        parameters_map = {'meta_parameters': '_meta_parameters',
-                          'inner_lrs': '_inner_lrs',
-                          }
-        #if load_checkpoint:
-        #    self.load_checkpoint_file()
         print(f"loading from {checkpoint_path}")
         self.model = model_v0.MobileHairNetV2()
         self.model.load_state_dict(torch.load(checkpoint_path))
