@@ -31,14 +31,13 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.llms.openai import OpenAI
 
 # Grounding DINO
-import groundingdino.datasets.transforms as T
-from groundingdino.models import build_model
-from groundingdino.util import box_ops
-from groundingdino.util.slconfig import SLConfig
-from groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
+#from groundingdino.models import build_model
+#from groundingdino.util import box_ops
+#from groundingdino.util.slconfig import SLConfig
+#from groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
 
 # segment anything
-from segment_anything import build_sam, SamPredictor, SamAutomaticMaskGenerator
+#from segment_anything import build_sam, SamPredictor, SamAutomaticMaskGenerator
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,6 +45,8 @@ import wget
 
 from Fashion import colorClassifier as cc
 from Fashion import hairSegmentation as hair_seg
+from Fashion import makeupTransfer as makeup
+
 
 VISUAL_CHATGPT_PREFIX = """Visual ChatGPT is designed to be able to assist with a wide range of text and visual related tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. Visual ChatGPT is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
 
@@ -800,52 +801,52 @@ class VisualQuestionAnswering:
         return answer
 
 
-class Segmenting:
-    def __init__(self, device):
-        print(f"Inintializing Segmentation to {device}")
-        self.device = device
-        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
-        self.model_checkpoint_path = os.path.join("checkpoints","sam")
-
-        self.download_parameters()
-        self.sam = build_sam(checkpoint=self.model_checkpoint_path).to(device)
-        self.sam_predictor = SamPredictor(self.sam)
-        self.mask_generator = SamAutomaticMaskGenerator(self.sam)
-        
-        self.saved_points = []
-        self.saved_labels = []
-
-    def download_parameters(self):
-        url = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth"
-        if not os.path.exists(self.model_checkpoint_path):
-            wget.download(url,out=self.model_checkpoint_path)
-
-        
-    def show_mask(self, mask: np.ndarray,image: np.ndarray,
-                random_color: bool = False, transparency=1) -> np.ndarray:
-        
-        """Visualize a mask on top of an image.
-        Args:
-            mask (np.ndarray): A 2D array of shape (H, W).
-            image (np.ndarray): A 3D array of shape (H, W, 3).
-            random_color (bool): Whether to use a random color for the mask.
-        Outputs:
-            np.ndarray: A 3D array of shape (H, W, 3) with the mask
-            visualized on top of the image.
-            transparenccy: the transparency of the segmentation mask
-        """
-        
-        if random_color:
-            color = np.concatenate([np.random.random(3)], axis=0)
-        else:
-            color = np.array([30 / 255, 144 / 255, 255 / 255])
-        h, w = mask.shape[-2:]
-        mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1) * 255
-
-        image = cv2.addWeighted(image, 0.7, mask_image.astype('uint8'), transparency, 0)
-
-
-        return image
+# class Segmenting:
+#     def __init__(self, device):
+#         print(f"Inintializing Segmentation to {device}")
+#         self.device = device
+#         self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+#         self.model_checkpoint_path = os.path.join("checkpoints","sam")
+#
+#         self.download_parameters()
+#         self.sam = build_sam(checkpoint=self.model_checkpoint_path).to(device)
+#         self.sam_predictor = SamPredictor(self.sam)
+#         self.mask_generator = SamAutomaticMaskGenerator(self.sam)
+#
+#         self.saved_points = []
+#         self.saved_labels = []
+#
+#     def download_parameters(self):
+#         url = "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth"
+#         if not os.path.exists(self.model_checkpoint_path):
+#             wget.download(url,out=self.model_checkpoint_path)
+#
+#
+#     def show_mask(self, mask: np.ndarray,image: np.ndarray,
+#                 random_color: bool = False, transparency=1) -> np.ndarray:
+#
+#         """Visualize a mask on top of an image.
+#         Args:
+#             mask (np.ndarray): A 2D array of shape (H, W).
+#             image (np.ndarray): A 3D array of shape (H, W, 3).
+#             random_color (bool): Whether to use a random color for the mask.
+#         Outputs:
+#             np.ndarray: A 3D array of shape (H, W, 3) with the mask
+#             visualized on top of the image.
+#             transparenccy: the transparency of the segmentation mask
+#         """
+#
+#         if random_color:
+#             color = np.concatenate([np.random.random(3)], axis=0)
+#         else:
+#             color = np.array([30 / 255, 144 / 255, 255 / 255])
+#         h, w = mask.shape[-2:]
+#         mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1) * 255
+#
+#         image = cv2.addWeighted(image, 0.7, mask_image.astype('uint8'), transparency, 0)
+#
+#
+#         return image
 
     def show_box(self, box, ax, label):
         x0, y0 = box[0], box[1]
@@ -1024,123 +1025,123 @@ class Segmenting:
         )
         return updated_image_path
     
-class Text2Box:
-    def __init__(self, device):
-        print(f"Initializing ObjectDetection to {device}")
-        self.device = device
-        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
-        self.model_checkpoint_path = os.path.join("checkpoints","groundingdino")
-        self.model_config_path = os.path.join("checkpoints","grounding_config.py")
-        self.download_parameters()
-        self.box_threshold = 0.3
-        self.text_threshold = 0.25
-        self.grounding = (self.load_model()).to(self.device)
-
-    def download_parameters(self):
-        url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth"
-        if not os.path.exists(self.model_checkpoint_path):
-            wget.download(url,out=self.model_checkpoint_path)
-        config_url = "https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py"
-        if not os.path.exists(self.model_config_path):
-            wget.download(config_url,out=self.model_config_path)
-    def load_image(self,image_path):
-         # load image
-        image_pil = Image.open(image_path).convert("RGB")  # load image
-
-        transform = T.Compose(
-            [
-                T.RandomResize([512], max_size=1333),
-                T.ToTensor(),
-                T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-            ]
-        )
-        image, _ = transform(image_pil, None)  # 3, h, w
-        return image_pil, image
-
-    def load_model(self):
-        args = SLConfig.fromfile(self.model_config_path)
-        args.device = self.device
-        model = build_model(args)
-        checkpoint = torch.load(self.model_checkpoint_path, map_location="cpu")
-        load_res = model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
-        print(load_res)
-        _ = model.eval()
-        return model
-
-    def get_grounding_boxes(self, image, caption, with_logits=True):
-        caption = caption.lower()
-        caption = caption.strip()
-        if not caption.endswith("."):
-            caption = caption + "."
-        image = image.to(self.device)
-        with torch.no_grad():
-            outputs = self.grounding(image[None], captions=[caption])
-        logits = outputs["pred_logits"].cpu().sigmoid()[0]  # (nq, 256)
-        boxes = outputs["pred_boxes"].cpu()[0]  # (nq, 4)
-        logits.shape[0]
-
-        # filter output
-        logits_filt = logits.clone()
-        boxes_filt = boxes.clone()
-        filt_mask = logits_filt.max(dim=1)[0] > self.box_threshold
-        logits_filt = logits_filt[filt_mask]  # num_filt, 256
-        boxes_filt = boxes_filt[filt_mask]  # num_filt, 4
-        logits_filt.shape[0]
-
-        # get phrase
-        tokenlizer = self.grounding.tokenizer
-        tokenized = tokenlizer(caption)
-        # build pred
-        pred_phrases = []
-        for logit, box in zip(logits_filt, boxes_filt):
-            pred_phrase = get_phrases_from_posmap(logit > self.text_threshold, tokenized, tokenlizer)
-            if with_logits:
-                pred_phrases.append(pred_phrase + f"({str(logit.max().item())[:4]})")
-            else:
-                pred_phrases.append(pred_phrase)
-
-        return boxes_filt, pred_phrases
-    
-    def plot_boxes_to_image(self, image_pil, tgt):
-        H, W = tgt["size"]
-        boxes = tgt["boxes"]
-        labels = tgt["labels"]
-        assert len(boxes) == len(labels), "boxes and labels must have same length"
-
-        draw = ImageDraw.Draw(image_pil)
-        mask = Image.new("L", image_pil.size, 0)
-        mask_draw = ImageDraw.Draw(mask)
-
-        # draw boxes and masks
-        for box, label in zip(boxes, labels):
-            # from 0..1 to 0..W, 0..H
-            box = box * torch.Tensor([W, H, W, H])
-            # from xywh to xyxy
-            box[:2] -= box[2:] / 2
-            box[2:] += box[:2]
-            # random color
-            color = tuple(np.random.randint(0, 255, size=3).tolist())
-            # draw
-            x0, y0, x1, y1 = box
-            x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
-
-            draw.rectangle([x0, y0, x1, y1], outline=color, width=6)
-            # draw.text((x0, y0), str(label), fill=color)
-
-            font = ImageFont.load_default()
-            if hasattr(font, "getbbox"):
-                bbox = draw.textbbox((x0, y0), str(label), font)
-            else:
-                w, h = draw.textsize(str(label), font)
-                bbox = (x0, y0, w + x0, y0 + h)
-            # bbox = draw.textbbox((x0, y0), str(label))
-            draw.rectangle(bbox, fill=color)
-            draw.text((x0, y0), str(label), fill="white")
-
-            mask_draw.rectangle([x0, y0, x1, y1], fill=255, width=2)
-
-        return image_pil, mask
-    
+# class Text2Box:
+#     def __init__(self, device):
+#         print(f"Initializing ObjectDetection to {device}")
+#         self.device = device
+#         self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+#         self.model_checkpoint_path = os.path.join("checkpoints","groundingdino")
+#         self.model_config_path = os.path.join("checkpoints","grounding_config.py")
+#         self.download_parameters()
+#         self.box_threshold = 0.3
+#         self.text_threshold = 0.25
+#         self.grounding = (self.load_model()).to(self.device)
+#
+#     def download_parameters(self):
+#         url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth"
+#         if not os.path.exists(self.model_checkpoint_path):
+#             wget.download(url,out=self.model_checkpoint_path)
+#         config_url = "https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+#         if not os.path.exists(self.model_config_path):
+#             wget.download(config_url,out=self.model_config_path)
+#     def load_image(self,image_path):
+#          # load image
+#         image_pil = Image.open(image_path).convert("RGB")  # load image
+#
+#         transform = T.Compose(
+#             [
+#                 T.RandomResize([512], max_size=1333),
+#                 T.ToTensor(),
+#                 T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+#             ]
+#         )
+#         image, _ = transform(image_pil, None)  # 3, h, w
+#         return image_pil, image
+#
+#     def load_model(self):
+#         args = SLConfig.fromfile(self.model_config_path)
+#         args.device = self.device
+#         model = build_model(args)
+#         checkpoint = torch.load(self.model_checkpoint_path, map_location="cpu")
+#         load_res = model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
+#         print(load_res)
+#         _ = model.eval()
+#         return model
+#
+#     def get_grounding_boxes(self, image, caption, with_logits=True):
+#         caption = caption.lower()
+#         caption = caption.strip()
+#         if not caption.endswith("."):
+#             caption = caption + "."
+#         image = image.to(self.device)
+#         with torch.no_grad():
+#             outputs = self.grounding(image[None], captions=[caption])
+#         logits = outputs["pred_logits"].cpu().sigmoid()[0]  # (nq, 256)
+#         boxes = outputs["pred_boxes"].cpu()[0]  # (nq, 4)
+#         logits.shape[0]
+#
+#         # filter output
+#         logits_filt = logits.clone()
+#         boxes_filt = boxes.clone()
+#         filt_mask = logits_filt.max(dim=1)[0] > self.box_threshold
+#         logits_filt = logits_filt[filt_mask]  # num_filt, 256
+#         boxes_filt = boxes_filt[filt_mask]  # num_filt, 4
+#         logits_filt.shape[0]
+#
+#         # get phrase
+#         tokenlizer = self.grounding.tokenizer
+#         tokenized = tokenlizer(caption)
+#         # build pred
+#         pred_phrases = []
+#         for logit, box in zip(logits_filt, boxes_filt):
+#             pred_phrase = get_phrases_from_posmap(logit > self.text_threshold, tokenized, tokenlizer)
+#             if with_logits:
+#                 pred_phrases.append(pred_phrase + f"({str(logit.max().item())[:4]})")
+#             else:
+#                 pred_phrases.append(pred_phrase)
+#
+#         return boxes_filt, pred_phrases
+#
+#     def plot_boxes_to_image(self, image_pil, tgt):
+#         H, W = tgt["size"]
+#         boxes = tgt["boxes"]
+#         labels = tgt["labels"]
+#         assert len(boxes) == len(labels), "boxes and labels must have same length"
+#
+#         draw = ImageDraw.Draw(image_pil)
+#         mask = Image.new("L", image_pil.size, 0)
+#         mask_draw = ImageDraw.Draw(mask)
+#
+#         # draw boxes and masks
+#         for box, label in zip(boxes, labels):
+#             # from 0..1 to 0..W, 0..H
+#             box = box * torch.Tensor([W, H, W, H])
+#             # from xywh to xyxy
+#             box[:2] -= box[2:] / 2
+#             box[2:] += box[:2]
+#             # random color
+#             color = tuple(np.random.randint(0, 255, size=3).tolist())
+#             # draw
+#             x0, y0, x1, y1 = box
+#             x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
+#
+#             draw.rectangle([x0, y0, x1, y1], outline=color, width=6)
+#             # draw.text((x0, y0), str(label), fill=color)
+#
+#             font = ImageFont.load_default()
+#             if hasattr(font, "getbbox"):
+#                 bbox = draw.textbbox((x0, y0), str(label), font)
+#             else:
+#                 w, h = draw.textsize(str(label), font)
+#                 bbox = (x0, y0, w + x0, y0 + h)
+#             # bbox = draw.textbbox((x0, y0), str(label))
+#             draw.rectangle(bbox, fill=color)
+#             draw.text((x0, y0), str(label), fill="white")
+#
+#             mask_draw.rectangle([x0, y0, x1, y1], fill=255, width=2)
+#
+#         return image_pil, mask
+#
     @prompts(name="Detect the Give Object",
              description="useful when you only want to detect or find out given objects in the picture"  
                          "The input to this tool should be a comma separated string of two, "
@@ -1280,187 +1281,187 @@ class InfinityOutPainting:
         return updated_image_path
 
 
+#
+# class ObjectSegmenting:
+#     template_model = True # Add this line to show this is a template model.
+#     def __init__(self,  Text2Box:Text2Box, Segmenting:Segmenting):
+#         # self.llm = OpenAI(temperature=0)
+#         self.grounding = Text2Box
+#         self.sam = Segmenting
+#
+#
+#     @prompts(name="Segment the given object",
+#             description="useful when you only want to segment the certain objects in the picture"
+#                         "according to the given text"
+#                         "like: segment the cat,"
+#                         "or can you segment an obeject for me"
+#                         "The input to this tool should be a comma separated string of two, "
+#                         "representing the image_path, the text description of the object to be found")
+#     def inference(self, inputs):
+#         image_path, det_prompt = inputs.split(",")
+#         print(f"image_path={image_path}, text_prompt={det_prompt}")
+#         image_pil, image = self.grounding.load_image(image_path)
+#
+#         boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, det_prompt)
+#         updated_image_path = self.sam.segment_image_with_boxes(image_pil,image_path,boxes_filt,pred_phrases)
+#         print(
+#             f"\nProcessed ObejectSegmenting, Input Image: {image_path}, Object to be Segment {det_prompt}, "
+#             f"Output Image: {updated_image_path}")
+#         return updated_image_path
+#
+#     def merge_masks(self, masks):
+#         '''
+#             Args:
+#                 mask (numpy.ndarray): shape N x 1 x H x W
+#             Outputs:
+#                 new_mask (numpy.ndarray): shape H x W
+#         '''
+#         if type(masks) == torch.Tensor:
+#             x = masks
+#         elif type(masks) == np.ndarray:
+#             x = torch.tensor(masks,dtype=int)
+#         else:
+#             raise TypeError("the type of the input masks must be numpy.ndarray or torch.tensor")
+#         x = x.squeeze(dim=1)
+#         value, _ = x.max(dim=0)
+#         new_mask = value.cpu().numpy()
+#         new_mask.astype(np.uint8)
+#         return new_mask
+#
+#     def get_mask(self, image_path, text_prompt):
+#
+#         print(f"image_path={image_path}, text_prompt={text_prompt}")
+#         # image_pil (PIL.Image.Image) -> size: W x H
+#         # image (numpy.ndarray) -> H x W x 3
+#         image_pil, image = self.grounding.load_image(image_path)
+#
+#         boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, text_prompt)
+#         image = cv2.imread(image_path)
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#         self.sam.sam_predictor.set_image(image)
+#
+#         # masks (torch.tensor) -> N x 1 x H x W
+#         masks = self.sam.get_mask_with_boxes(image_pil, image, boxes_filt)
+#
+#         # merged_mask -> H x W
+#         merged_mask = self.merge_masks(masks)
+#         # draw output image
+#
+#         for mask in masks:
+#             image = self.sam.show_mask(mask[0].cpu().numpy(), image, random_color=True, transparency=0.3)
+#
+#
+#         merged_mask_image = Image.fromarray(merged_mask)
+#
+#         return merged_mask
 
-class ObjectSegmenting:
-    template_model = True # Add this line to show this is a template model.
-    def __init__(self,  Text2Box:Text2Box, Segmenting:Segmenting):
-        # self.llm = OpenAI(temperature=0)
-        self.grounding = Text2Box
-        self.sam = Segmenting
-
-
-    @prompts(name="Segment the given object",
-            description="useful when you only want to segment the certain objects in the picture"
-                        "according to the given text"  
-                        "like: segment the cat,"
-                        "or can you segment an obeject for me"
-                        "The input to this tool should be a comma separated string of two, "
-                        "representing the image_path, the text description of the object to be found")
-    def inference(self, inputs):
-        image_path, det_prompt = inputs.split(",")
-        print(f"image_path={image_path}, text_prompt={det_prompt}")
-        image_pil, image = self.grounding.load_image(image_path)
-
-        boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, det_prompt)
-        updated_image_path = self.sam.segment_image_with_boxes(image_pil,image_path,boxes_filt,pred_phrases)
-        print(
-            f"\nProcessed ObejectSegmenting, Input Image: {image_path}, Object to be Segment {det_prompt}, "
-            f"Output Image: {updated_image_path}")
-        return updated_image_path
-
-    def merge_masks(self, masks):
-        '''
-            Args:
-                mask (numpy.ndarray): shape N x 1 x H x W
-            Outputs:
-                new_mask (numpy.ndarray): shape H x W       
-        '''
-        if type(masks) == torch.Tensor:
-            x = masks
-        elif type(masks) == np.ndarray:
-            x = torch.tensor(masks,dtype=int)
-        else:   
-            raise TypeError("the type of the input masks must be numpy.ndarray or torch.tensor")
-        x = x.squeeze(dim=1)
-        value, _ = x.max(dim=0)
-        new_mask = value.cpu().numpy()
-        new_mask.astype(np.uint8)
-        return new_mask
-    
-    def get_mask(self, image_path, text_prompt):
-
-        print(f"image_path={image_path}, text_prompt={text_prompt}")
-        # image_pil (PIL.Image.Image) -> size: W x H
-        # image (numpy.ndarray) -> H x W x 3
-        image_pil, image = self.grounding.load_image(image_path)
-
-        boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, text_prompt)
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        self.sam.sam_predictor.set_image(image)
-        
-        # masks (torch.tensor) -> N x 1 x H x W 
-        masks = self.sam.get_mask_with_boxes(image_pil, image, boxes_filt)
-
-        # merged_mask -> H x W
-        merged_mask = self.merge_masks(masks)
-        # draw output image
-
-        for mask in masks:
-            image = self.sam.show_mask(mask[0].cpu().numpy(), image, random_color=True, transparency=0.3)
-
-
-        merged_mask_image = Image.fromarray(merged_mask)
-
-        return merged_mask
-
-
-class ImageEditing:
-    template_model = True
-    def __init__(self, Text2Box:Text2Box, Segmenting:Segmenting, Inpainting:Inpainting):
-        print(f"Initializing ImageEditing")
-        self.sam = Segmenting
-        self.grounding = Text2Box
-        self.inpaint = Inpainting
-
-    def pad_edge(self,mask,padding):
-        #mask Tensor [H,W]
-        mask = mask.numpy()
-        true_indices = np.argwhere(mask)
-        mask_array = np.zeros_like(mask, dtype=bool)
-        for idx in true_indices:
-            padded_slice = tuple(slice(max(0, i - padding), i + padding + 1) for i in idx)
-            mask_array[padded_slice] = True
-        new_mask = (mask_array * 255).astype(np.uint8)
-        #new_mask
-        return new_mask
-
-    @prompts(name="Remove Something From The Photo",
-             description="useful when you want to remove and object or something from the photo "
-                         "from its description or location. "
-                         "The input to this tool should be a comma separated string of two, "
-                         "representing the image_path and the object need to be removed. ")    
-    def inference_remove(self, inputs):
-        image_path, to_be_removed_txt = inputs.split(",")[0], ','.join(inputs.split(',')[1:])
-        return self.inference_replace_sam(f"{image_path},{to_be_removed_txt},background")
-
-    @prompts(name="Replace Something From The Photo",
-            description="useful when you want to replace an object from the object description or "
-                        "location with another object from its description. "
-                        "The input to this tool should be a comma separated string of three, "
-                        "representing the image_path, the object to be replaced, the object to be replaced with ")
-    def inference_replace_sam(self,inputs):
-        image_path, to_be_replaced_txt, replace_with_txt = inputs.split(",")
-        
-        print(f"image_path={image_path}, to_be_replaced_txt={to_be_replaced_txt}")
-        image_pil, image = self.grounding.load_image(image_path)
-        boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, to_be_replaced_txt)
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        self.sam.sam_predictor.set_image(image)
-        masks = self.sam.get_mask_with_boxes(image_pil, image, boxes_filt)
-        mask = torch.sum(masks, dim=0).unsqueeze(0)
-        mask = torch.where(mask > 0, True, False)
-        mask = mask.squeeze(0).squeeze(0).cpu() #tensor
-
-        mask = self.pad_edge(mask,padding=20) #numpy
-        mask_image = Image.fromarray(mask)
-
-        updated_image = self.inpaint(prompt=replace_with_txt, image=image_pil,
-                                     mask_image=mask_image)
-        updated_image_path = get_new_image_name(image_path, func_name="replace-something")
-        updated_image = updated_image.resize(image_pil.size)
-        updated_image.save(updated_image_path)
-        print(
-            f"\nProcessed ImageEditing, Input Image: {image_path}, Replace {to_be_replaced_txt} to {replace_with_txt}, "
-            f"Output Image: {updated_image_path}")
-        return updated_image_path
-
-class BackgroundRemoving:
-    '''
-        using to remove the background of the given picture
-    '''
-    template_model = True
-    def __init__(self,VisualQuestionAnswering:VisualQuestionAnswering, Text2Box:Text2Box, Segmenting:Segmenting):
-        self.vqa = VisualQuestionAnswering
-        self.obj_segmenting = ObjectSegmenting(Text2Box,Segmenting)
-
-    @prompts(name="Remove the background",
-             description="useful when you want to extract the object or remove the background,"
-                         "the input should be a string image_path"
-                                )
-    def inference(self, image_path):
-        '''
-            given a image, return the picture only contains the extracted main object
-        '''
-        updated_image_path = None
-
-        mask = self.get_mask(image_path)
-
-        image = Image.open(image_path)
-        mask = Image.fromarray(mask)
-        image.putalpha(mask)
-
-        updated_image_path = get_new_image_name(image_path, func_name="detect-something")
-        image.save(updated_image_path)
-
-        return updated_image_path
-
-    def get_mask(self, image_path):
-        '''
-            Description:
-                given an image path, return the mask of the main object.
-            Args:
-                image_path (string): the file path of the image
-            Outputs:
-                mask (numpy.ndarray): H x W
-        '''
-        vqa_input = f"{image_path}, what is the main object in the image?"
-        text_prompt = self.vqa.inference(vqa_input)
-
-        mask = self.obj_segmenting.get_mask(image_path,text_prompt)
-
-        return mask
+#
+# class ImageEditing:
+#     template_model = True
+#     def __init__(self, Text2Box:Text2Box, Segmenting:Segmenting, Inpainting:Inpainting):
+#         print(f"Initializing ImageEditing")
+#         self.sam = Segmenting
+#         self.grounding = Text2Box
+#         self.inpaint = Inpainting
+#
+#     def pad_edge(self,mask,padding):
+#         #mask Tensor [H,W]
+#         mask = mask.numpy()
+#         true_indices = np.argwhere(mask)
+#         mask_array = np.zeros_like(mask, dtype=bool)
+#         for idx in true_indices:
+#             padded_slice = tuple(slice(max(0, i - padding), i + padding + 1) for i in idx)
+#             mask_array[padded_slice] = True
+#         new_mask = (mask_array * 255).astype(np.uint8)
+#         #new_mask
+#         return new_mask
+#
+#     @prompts(name="Remove Something From The Photo",
+#              description="useful when you want to remove and object or something from the photo "
+#                          "from its description or location. "
+#                          "The input to this tool should be a comma separated string of two, "
+#                          "representing the image_path and the object need to be removed. ")
+#     def inference_remove(self, inputs):
+#         image_path, to_be_removed_txt = inputs.split(",")[0], ','.join(inputs.split(',')[1:])
+#         return self.inference_replace_sam(f"{image_path},{to_be_removed_txt},background")
+#
+#     @prompts(name="Replace Something From The Photo",
+#             description="useful when you want to replace an object from the object description or "
+#                         "location with another object from its description. "
+#                         "The input to this tool should be a comma separated string of three, "
+#                         "representing the image_path, the object to be replaced, the object to be replaced with ")
+#     def inference_replace_sam(self,inputs):
+#         image_path, to_be_replaced_txt, replace_with_txt = inputs.split(",")
+#
+#         print(f"image_path={image_path}, to_be_replaced_txt={to_be_replaced_txt}")
+#         image_pil, image = self.grounding.load_image(image_path)
+#         boxes_filt, pred_phrases = self.grounding.get_grounding_boxes(image, to_be_replaced_txt)
+#         image = cv2.imread(image_path)
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#         self.sam.sam_predictor.set_image(image)
+#         masks = self.sam.get_mask_with_boxes(image_pil, image, boxes_filt)
+#         mask = torch.sum(masks, dim=0).unsqueeze(0)
+#         mask = torch.where(mask > 0, True, False)
+#         mask = mask.squeeze(0).squeeze(0).cpu() #tensor
+#
+#         mask = self.pad_edge(mask,padding=20) #numpy
+#         mask_image = Image.fromarray(mask)
+#
+#         updated_image = self.inpaint(prompt=replace_with_txt, image=image_pil,
+#                                      mask_image=mask_image)
+#         updated_image_path = get_new_image_name(image_path, func_name="replace-something")
+#         updated_image = updated_image.resize(image_pil.size)
+#         updated_image.save(updated_image_path)
+#         print(
+#             f"\nProcessed ImageEditing, Input Image: {image_path}, Replace {to_be_replaced_txt} to {replace_with_txt}, "
+#             f"Output Image: {updated_image_path}")
+#         return updated_image_path
+#
+# class BackgroundRemoving:
+#     '''
+#         using to remove the background of the given picture
+#     '''
+#     template_model = True
+#     def __init__(self,VisualQuestionAnswering:VisualQuestionAnswering, Text2Box:Text2Box, Segmenting:Segmenting):
+#         self.vqa = VisualQuestionAnswering
+#         self.obj_segmenting = ObjectSegmenting(Text2Box,Segmenting)
+#
+#     @prompts(name="Remove the background",
+#              description="useful when you want to extract the object or remove the background,"
+#                          "the input should be a string image_path"
+#                                 )
+#     def inference(self, image_path):
+#         '''
+#             given a image, return the picture only contains the extracted main object
+#         '''
+#         updated_image_path = None
+#
+#         mask = self.get_mask(image_path)
+#
+#         image = Image.open(image_path)
+#         mask = Image.fromarray(mask)
+#         image.putalpha(mask)
+#
+#         updated_image_path = get_new_image_name(image_path, func_name="detect-something")
+#         image.save(updated_image_path)
+#
+#         return updated_image_path
+#
+#     def get_mask(self, image_path):
+#         '''
+#             Description:
+#                 given an image path, return the mask of the main object.
+#             Args:
+#                 image_path (string): the file path of the image
+#             Outputs:
+#                 mask (numpy.ndarray): H x W
+#         '''
+#         vqa_input = f"{image_path}, what is the main object in the image?"
+#         text_prompt = self.vqa.inference(vqa_input)
+#
+#         mask = self.obj_segmenting.get_mask(image_path,text_prompt)
+#
+#         return mask
 
 class ClassifyColors:
     def __init__(self, device):
@@ -1517,6 +1518,35 @@ class HairSegmentation:
         image.save(updated_image_path)
 
         print(f"\nProcessed hair segmentation, Image : {image1_path}"
+              f"Output image: {updated_image_path}")
+        return updated_image_path
+
+
+class MakeupTransfer:
+    def __init__(self, device):
+        print(f"Initializing Hair segmentation to {device}")
+        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+        self.pipe = makeup.MakeupTransfer()
+
+    @prompts(name="Apply or remove makeup of one given image",
+             description="useful when you want to apply or remove makeup of a given image , "
+                         "returns the transformed image later"
+                         "The inputs to this tool should be a comma separated string,"
+                         "containing the image_path and a string command only of one two [apply, remove]")
+    def inference(self, inputs):
+        print(f"{inputs}")
+        image1_path, command = inputs.split(",")
+        image_out = self.pipe.makeup(image1_path, command)
+        image_out = image_out.detach().cpu()
+        image_out = asarray(image_out)
+        image_out = image_out.squeeze()
+        image_out = np.transpose(image_out, (1, 2, 0))
+        image_out = Image.fromarray(image_out)
+
+        updated_image_path = get_new_image_name(image1_path, func_name=f"makeup-{command}")
+        image_out.save(updated_image_path)
+
+        print(f"\nProcessed makeup, Image : {image1_path}"
               f"Output image: {updated_image_path}")
         return updated_image_path
 
