@@ -74,6 +74,10 @@ class HairSegmentation:
             img = ToPILImage()(tensor[i])
             img.save(file_paths[i])
 
+    def selective_mask_t(self, image_src, mask, channels=[]):
+        # mask = mask[:, torch.tensor(channels).long()]
+        # mask = torch.sgn(torch.sum(mask, dim=1)).to(dtype=image_src.dtype).unsqueeze(-1)
+        return mask[:, :, np.newaxis] * image_src
     def hair_segment(self, file_path):
         # array_img = []
         # for m in images:
@@ -85,7 +89,7 @@ class HairSegmentation:
         # array_img = torch.stack(array_img)
         image = image.to(DEVICE)
         print(f"starting inference")
-        mask_out = self.model._forward(image)
+        mask_out = self.model(image)
         print(f"returned mask")
 
         return mask_out

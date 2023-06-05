@@ -10,6 +10,7 @@ import cv2
 import re
 import uuid
 from PIL import Image, ImageDraw, ImageOps, ImageFont
+from numpy import asarray
 import math
 import numpy as np
 import argparse
@@ -1498,19 +1499,19 @@ class HairSegmentation:
         
 
     @prompts(name="Hair segmentation of one given image",
-             description="useful when you want to do hair segmentation a given image , "
+             description="useful when you want to do hair segmentation of a given image , "
                          "returns the segmented image later "
                          "The input to this tool should be a string,"
                          "representing the image_path")
     def inference(self, inputs):
         print(f"{inputs}")
-        image1_path = inputs#.split(",")[0], ','.join(inputs.split(',')[1:])
-        #image1 = Image.open(image1_path)
-        mask_out = self.pipe.hair_segment(image1_path)#.text[0]
-        
+        image1_path = inputs
+        mask_out = self.pipe.hair_segment(image1_path).detach()
+        mask = mask_out.cpu().squeeze().numpy() > 0.7
         image = Image.open(image1_path)
-        mask = Image.fromarray(mask_out)
-        image.putalpha(mask)
+        image = asarray(image)
+        image = self.selective_mask_t(image, mask, channels=[0, 1, 2])
+
 
         updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
         image.save(updated_image_path)
