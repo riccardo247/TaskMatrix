@@ -1550,7 +1550,7 @@ class MakeupTransfer:
 
         print(f"\nProcessed makeup, Image : {image1_path}"
               f"Output image: {updated_image_path}")
-        return image_out
+        return updated_image_path
 
 class ConversationBot:
     def __init__(self, load_dict):
