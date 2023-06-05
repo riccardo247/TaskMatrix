@@ -3,7 +3,7 @@ from torchvision.transforms import ToTensor
 from torchvision.transforms import ToPILImage
 from PIL import Image
 import requests
-import model_v0
+from . import model_v0
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 

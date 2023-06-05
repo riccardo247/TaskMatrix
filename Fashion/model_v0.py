@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torchvision.models.mobilenet import mobilenet_v2
 
-from blocks import LayerDepwiseDecode
+from .blocks import LayerDepwiseDecode
 
 
 class MobileHairNetV2(nn.Module):
