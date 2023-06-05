@@ -1511,7 +1511,7 @@ class HairSegmentation:
         image = Image.open(image1_path)
         image = asarray(image)
         image = self.pipe.selective_mask_t(image, mask, channels=[0, 1, 2])
-
+        image = Image.fromarray(image)
 
         updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
         image.save(updated_image_path)
