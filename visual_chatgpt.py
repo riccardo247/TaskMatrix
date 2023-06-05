@@ -1540,8 +1540,9 @@ class MakeupTransfer:
         image_out = image_out.detach().cpu()
         image_out = asarray(image_out)
         image_out = image_out.squeeze()
+        image_out = np.transpose(image_out, (1, 2, 0))
+        image_out = image_out.astype(np.uint8)
         print(f"out image shape {image_out.shape}")
-        #image_out = np.transpose(image_out, (1, 2, 0))
         image_out = Image.fromarray(image_out)
 
         updated_image_path = get_new_image_name(image1_path, func_name=f"makeup-{command}")
