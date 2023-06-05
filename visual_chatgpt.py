@@ -1530,7 +1530,7 @@ class MakeupTransfer:
 
     @prompts(name="Apply or remove makeup of one given image",
              description="useful when you want to apply or remove makeup of a given image , "
-                         "returns the transformed image later"
+                         "returns the image later"
                          "The inputs to this tool should be a comma separated string,"
                          "containing the image_path and a string command only of one two [apply, remove]")
     def inference(self, inputs):
@@ -1550,7 +1550,7 @@ class MakeupTransfer:
 
         print(f"\nProcessed makeup, Image : {image1_path}"
               f"Output image: {updated_image_path}")
-        return updated_image_path
+        return image_out
 
 class ConversationBot:
     def __init__(self, load_dict):
