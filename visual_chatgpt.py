@@ -1531,7 +1531,7 @@ class HairColor:
         self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
         #TODO avoid and use chain of tools
         #self.pipe = hair_seg.HairSegmentation()
-        self.pipe2 = hair_seg.HairColor()
+        self.pipe2 = hair_color.HairColor()
         # self.pipe.to(device)
         self.seed = -1
 
@@ -1546,7 +1546,7 @@ class HairColor:
         image1_path = inputs.split(',')[0]
         rgb = inputs.split(',')[1]
         rgb = rgb.strip("()").split(",")
-        r,g,b = [int(num) for num in rgb]
+        r, g, b = [int(num) for num in rgb]
         processed = self.pipe2.hair_color(image1_path, (r, g, b)).detach()
 
         updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
