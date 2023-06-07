@@ -1545,9 +1545,9 @@ class HairColor:
         print(f"{inputs}")
         image1_path = inputs.split(',', 1)[0]
         rgb = inputs.split(',', 1)[1]
-        rgb = rgb.strip("()").split(",")
-        r, g, b = [int(num) for num in rgb]
-        processed = self.pipe2.hair_color(image1_path, (r, g, b)).detach()
+        rgb = rgb.strip().strip("()").split(",")
+        rgb = tuple(int(num) for num in rgb)
+        processed = self.pipe2.hair_color(image1_path, rgb).detach()
 
         updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
         processed = ToTensor()(processed)
