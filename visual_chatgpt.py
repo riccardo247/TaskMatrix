@@ -1543,8 +1543,8 @@ class HairColor:
                          "to the chosen color, for example for red it is (255, 0, 0)")
     def inference(self, inputs):
         print(f"{inputs}")
-        image1_path = inputs.split(',')[0]
-        rgb = inputs.split(',')[1]
+        image1_path = inputs.split(',', 1)[0]
+        rgb = inputs.split(',', 1)[1]
         rgb = rgb.strip("()").split(",")
         r, g, b = [int(num) for num in rgb]
         processed = self.pipe2.hair_color(image1_path, (r, g, b)).detach()
