@@ -18,12 +18,11 @@ class HairSegmentation:
 
     def load_image(self, file_path):
         # Open the image file with PIL
-        image = Image.open(file_path)
+        image = cv2.imread(file_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (224, 224))
 
-        # Convert the PIL image to a PyTorch tensor
-        tensor = ToTensor()(image)
-
-        return tensor
+        return image
 
 
     def load_images(self, file_paths):
