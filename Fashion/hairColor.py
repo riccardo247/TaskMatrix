@@ -77,7 +77,6 @@ class HairColor:
         processed = cv2.merge([L, A1, B1])
         processed = cv2.cvtColor(processed, cv2.COLOR_LAB2BGR)
         # back to RGB
-        processed = processed[..., ::-1].copy()
+        #processed = processed[..., ::-1].copy()
         print(f"returned processed")
-
         return processed
