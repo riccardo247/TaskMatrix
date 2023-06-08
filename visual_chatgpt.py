@@ -50,6 +50,7 @@ from Fashion import hairSegmentation as hair_seg
 from Fashion import makeupTransfer as makeup
 
 from Fashion import hairColor as hair_color
+from Fashion import lipsColor as lips_color
 
 VISUAL_CHATGPT_PREFIX = """Visual ChatGPT is designed to be able to assist with a wide range of text and visual related tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. Visual ChatGPT is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
 
@@ -1549,7 +1550,7 @@ class HairColor:
         rgb = tuple(int(num) for num in rgb)
         processed = self.pipe2.hair_color(image1_path, rgb)
 
-        updated_image_path = get_new_image_name(image1_path, func_name="hair-segmentation")
+        updated_image_path = get_new_image_name(image1_path, func_name="hair-color")
         processed = ToTensor()(processed)
 
         save_image(processed, updated_image_path)
@@ -1557,6 +1558,37 @@ class HairColor:
         print(f"\nProcessed hair segmentation, Image : {image1_path}"
               f"Output image: {updated_image_path}")
         return updated_image_path
+
+class LipsColor:
+    def __init__(self, device):
+        print(f"Initializing Hair segmentation to {device}")
+        self.torch_dtype = torch.float16 if 'cuda' in device else torch.float32
+        #TODO avoid and use chain of tools
+        self.pipe2 = lips_color.LipsColor()
+
+    @prompts(name="Change lips color of one given image",
+             description="useful when you want to do change lips color of a given image , "
+                         "returns the processed image later "
+                         "The input to this tool should be a comma separated string of two parameters, "
+                         "the first representing the image_path, the second the rgb tuple corresponding"
+                         "to the chosen color, for example for red it is (255, 0, 0)")
+    def inference(self, inputs):
+        print(f"{inputs}")
+        image1_path = inputs.split(',', 1)[0]
+        rgb = inputs.split(',', 1)[1]
+        rgb = rgb.strip().strip("()").split(",")
+        rgb = tuple(int(num) for num in rgb)
+        processed = self.pipe2.lips_color(image1_path, rgb)
+
+        updated_image_path = get_new_image_name(image1_path, func_name="lips-color")
+        processed = ToTensor()(processed)
+
+        save_image(processed, updated_image_path)
+
+        print(f"\nProcessed lips color, Image : {image1_path}"
+              f"Output image: {updated_image_path}")
+        return updated_image_path
+
 class MakeupTransfer:
     def __init__(self, device):
         print(f"Initializing Hair segmentation to {device}")
