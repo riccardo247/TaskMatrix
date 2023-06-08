@@ -152,6 +152,8 @@ class LipsColor:
         L2, A2, B2 = cv2.split(cv2.cvtColor(mod, cv2.COLOR_BGR2LAB))
         processed = cv2.merge([L1, A2, B2])
         processed = cv2.cvtColor(processed, cv2.COLOR_LAB2BGR)
+        #back to RGB
+        processed = processed[..., ::-1].copy()
         print(f"returned processed image")
 
         return processed
