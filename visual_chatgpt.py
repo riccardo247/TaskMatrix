@@ -1608,12 +1608,12 @@ class MakeupTransfer:
         image_out = asarray(image_out)
         image_out = image_out.squeeze()
         image_out = np.transpose(image_out, (1, 2, 0))
-        image_out = image_out.astype(np.uint8)
+        #image_out = image_out.astype(np.uint8)
         print(f"out image shape {image_out.shape}")
-        image_out = Image.fromarray(image_out, mode='RGB')
+        #image_out = Image.fromarray(image_out, mode='RGB')
 
         updated_image_path = get_new_image_name(image1_path, func_name=f"makeup-{command}")
-        image_out.save(updated_image_path)
+        save_image(image_out, updated_image_path)
 
         print(f"\nProcessed makeup, Image : {image1_path}"
               f"Output image: {updated_image_path}")

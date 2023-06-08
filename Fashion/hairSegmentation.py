@@ -12,7 +12,7 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class HairSegmentation:
-    def __init__(self, load_checkpoint=False, checkpoint_path="1EEBnPd8Akukq_fyCb6qGQYWn8Ljjl4so"):
+    def __init__(self, load_checkpoint=False, checkpoint_path="hair_segmentation_29"):
         print(f"loading from {checkpoint_path}")
         self.model = model_v0.MobileHairNetV2()
         self.model.load_state_dict(torch.load(checkpoint_path))
@@ -73,6 +73,8 @@ class HairSegmentation:
         # for m in images:
         print(f'going to segment image {file_path}')
         image = self.load_image(file_path)
+        image_norm = image / 255
+        image_tensor = ToTensor()(image_norm)
         print("loaded image")
         image = image.unsqueeze(0).float()
         # array_img.append(image)

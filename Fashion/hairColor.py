@@ -68,9 +68,9 @@ class HairColor:
         lab_img = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         L, A, B = cv2.split(lab_img)
         B, G, R = cv2.split(image)
-        B[mask_out[:, :, 0] >= 180] = b
+        B[mask_out[:, :, 0] >= 180] = r
         G[mask_out[:, :, 0] >= 180] = g
-        R[mask_out[:, :, 0] >= 180] = r
+        R[mask_out[:, :, 0] >= 180] = b
 
         colored = cv2.merge([B, G, R])
         L1, A1, B1 = cv2.split(cv2.cvtColor(colored, cv2.COLOR_BGR2LAB))

@@ -3,8 +3,12 @@ import torch
 from torch import nn
 from torchvision.transforms import ToTensor
 from torchvision.transforms import ToPILImage
+
 from PIL import Image
+import torchvision.transforms as transforms
+
 import requests
+import cv2
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -74,12 +78,18 @@ class MakeupTransfer:
 
     def load_image(self, file_path):
         # Open the image file with PIL
-        image = Image.open(file_path)
-
+        image = Image.open(file_path).convert('RGB')
+        # image = cv2.imread(file_path)
         # Convert the PIL image to a PyTorch tensor
-        tensor = ToTensor()(image)
-
-        return tensor
+        # tensor = ToTensor()(image)
+        desired_size = (256, 256)
+        image = Image.fromarray(cv2.resize(np.array(image), (256, 256)))
+        transform = transforms.Compose([
+            transforms.Resize(desired_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+        image = transform(image)
+        return image
 
     def load_checkpoint_file(self):
         file_url = "https://drive.google.com/uc?export=download&id=1-EIWKrO7kiuNuf4Ku2oXqSHfR3-hbJcH"
@@ -98,20 +108,26 @@ class MakeupTransfer:
             img = ToPILImage()(tensor[i])
             img.save(file_paths[i])
 
+    def denorm(self, x):
+        out = (x + 1) / 2
+        return out.clamp_(0, 1)
 
     def makeup(self, file_path, command):
         # array_img = []
         # for m in images:
         print(f'going to {command} image {file_path}')
         image = self.load_image(file_path)
+
         print("loaded image")
-        image = image.unsqueeze(0)
+        image = image.unsqueeze(0).float()
         image = image.to(DEVICE)
         print(f"starting inference")
         if "remove" in command:
             image_out = self.modelB(image)
         else:
             image_out = self.modelA(image)
-        print(f"returned image")
 
+        image_out = self.denorm(image_out)
+        print(f"returned image")
+        print(f"max: {np.max(image_out)}")
         return image_out
