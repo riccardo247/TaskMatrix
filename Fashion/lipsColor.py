@@ -115,7 +115,7 @@ class LipsColor:
         #use landmarks model on image
         self.model.eval()
         y_pred = self.model(image_tensor)
-        y_pred = (y_pred * 128).detach().numpy()
+        y_pred = (y_pred * 128).detach().to('cpu').numpy()
         marks = np.round(y_pred).astype(np.int32)
         marks = marks.reshape(68, 2)
         #get lips mask
