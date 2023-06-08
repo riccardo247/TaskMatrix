@@ -4,11 +4,16 @@
 This is based on TaskMatrix
 
 Current models included are:
+
 hair segmentation
+
 change of hair color
+
 facial landmarks
+
 lipstick color change
-Makeup apply and remove via GAN
+
+makeup apply and remove via GAN
 
 
 ## Trademark Notice
