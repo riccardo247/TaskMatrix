@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from torchvision.transforms import ToTensor
 from torchvision.transforms import ToPILImage
+
+import cv2
 from PIL import Image
 import requests
 from . import model_v0
@@ -10,7 +12,7 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class HairSegmentation:
-    def __init__(self, load_checkpoint=False, checkpoint_path="hair_segmentation_20epochs.pt"):
+    def __init__(self, load_checkpoint=False, checkpoint_path="1EEBnPd8Akukq_fyCb6qGQYWn8Ljjl4so"):
         print(f"loading from {checkpoint_path}")
         self.model = model_v0.MobileHairNetV2()
         self.model.load_state_dict(torch.load(checkpoint_path))
@@ -72,7 +74,7 @@ class HairSegmentation:
         print(f'going to segment image {file_path}')
         image = self.load_image(file_path)
         print("loaded image")
-        image = image.unsqueeze(0)
+        image = image.unsqueeze(0).float()
         # array_img.append(image)
         # array_img = torch.stack(array_img)
         image = image.to(DEVICE)
