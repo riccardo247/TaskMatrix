@@ -78,7 +78,7 @@ class LipsColor:
 
     def load_image(self, file_path):
         # Open the image file with PIL
-        image = cv2.imread(file_path)
+        image = cv2.imread(file_path, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (128, 128))
 
         return image
