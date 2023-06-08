@@ -107,7 +107,7 @@ class LipsColor:
         print(f'going to lips color image {file_path} and color {rgb}')
         image = self.load_image(file_path)
         image_norm = image/255
-        image_tensor = ToTensor()(image_norm)
+        image_tensor = torch.from_numpy(image_norm)
         print("loaded image")
         image_tensor = image_tensor.unsqueeze(0).permute([0, 3, 1, 2]).float()
         image_tensor = image_tensor.to(DEVICE)
